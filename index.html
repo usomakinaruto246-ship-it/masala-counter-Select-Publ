@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#173c32">
+  <meta name="description" content="Fast offline masala shop billing calculator.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Masala Counter</title>
+  <style>
+    :root{color-scheme:light;--ink:#18231f;--muted:#66736d;--green:#173c32;--mint:#e8f2ed;--line:#dce5df;--paper:#f6f8f6;--white:#fff;--red:#b42318}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+    header{background:var(--green);color:white;padding:22px 18px 25px;border-radius:0 0 22px 22px}
+    header .top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    h1{font-size:23px;margin:0;font-weight:800;letter-spacing:-.4px}.sub{color:#d5e6dc;font-size:13px;margin-top:5px}
+    .pill{font-size:11px;border:1px solid #739287;border-radius:30px;padding:5px 9px;color:#e5f2eb;white-space:nowrap}
+    main{max-width:680px;margin:0 auto;padding:16px 14px 38px}
+    .section-head{display:flex;justify-content:space-between;align-items:center;margin:5px 2px 10px}
+    h2{font-size:16px;margin:0}.muted{color:var(--muted);font-size:12px}
+    .items{display:grid;gap:10px}
+    .item{background:var(--white);border:1px solid var(--line);border-radius:15px;padding:13px;box-shadow:0 2px 8px #1b38200a}
+    .item-top{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+    .dot{width:10px;height:10px;border-radius:50%;flex:none}
+    .item-name{font-weight:750;flex:1;min-width:0;border:0;background:transparent;font:inherit;padding:5px 0;color:var(--ink)}
+    .remove{border:0;background:#f4f5f4;color:#68736e;border-radius:9px;width:34px;height:34px;font-size:20px}
+    .fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    label{display:block;color:var(--muted);font-size:11px;font-weight:650;margin:0 0 5px}
+    input{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:11px 10px;font:inherit;font-size:16px;color:var(--ink);outline:none;min-width:0}
+    input:focus{border-color:#43836d;box-shadow:0 0 0 3px #43836d20}
+    .item-price{display:flex;justify-content:space-between;align-items:center;margin-top:11px;padding-top:9px;border-top:1px solid #edf0ed;font-size:13px;color:var(--muted)}
+    .item-price strong{color:var(--ink);font-size:16px}
+    button{cursor:pointer;font:inherit}
+    .add{width:100%;margin-top:10px;border:1px dashed #8da99a;border-radius:12px;background:#f0f6f2;color:var(--green);font-weight:750;padding:12px}
+    .bill{margin-top:17px;background:var(--green);color:#fff;border-radius:17px;padding:17px}
+    .bill-label{font-size:12px;color:#d2e2da;font-weight:650}.total{font-size:34px;font-weight:850;letter-spacing:-1px;margin:2px 0 13px}
+    .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .pay-grid label{color:#d2e2da}.pay-grid input{background:#fff}
+    .change{background:#fff;color:var(--green);border-radius:12px;padding:12px;margin-top:12px}
+    .change small{display:block;color:var(--muted);font-weight:700;font-size:11px}
+    .change strong{font-size:27px;font-weight:850}
+    .due{color:var(--red)!important}
+    .actions{display:flex;gap:9px;margin-top:12px}
+    .actions button{flex:1;border:1px solid var(--line);border-radius:11px;padding:11px;background:white;color:var(--ink);font-weight:700}
+    .actions .primary{background:#d9ebe1;border-color:#d9ebe1;color:var(--green)}
+    .note{font-size:11px;color:var(--muted);text-align:center;margin:14px 4px}
+    .error{font-size:12px;color:var(--red);margin-top:8px;display:none}
+    @media(max-width:380px){.fields{gap:7px}.item{padding:11px}.total{font-size:30px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="top"><div><h1>Masala Counter</h1><div class="sub">Quick billing. Clear change. No mental pressure.</div></div><span class="pill" id="status">Offline-ready</span></div>
+</header>
+<main>
+  <div class="section-head"><h2>Customer order</h2><span class="muted">Weight in grams · rate per kg</span></div>
+  <section class="items" id="items"></section>
+  <button class="add" id="add">＋ Add another masala</button>
+
+  <section class="bill">
+    <div class="bill-label">TOTAL BILL</div>
+    <div class="total" id="total">₹0.00</div>
+    <div class="pay-grid">
+      <div><label for="paid">Customer gives (₹)</label><input id="paid" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 500"></div>
+      <div><label for="rounding">Rounding</label><select id="rounding" style="width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;font:inherit;background:white"><option value="0">Exact paise</option><option value="1">Nearest rupee</option></select></div>
+    </div>
+    <div class="change"><small id="change-label">RETURN TO CUSTOMER</small><strong id="change">₹0.00</strong></div>
+    <div class="error" id="error">Customer's payment is less than the bill.</div>
+  </section>
+  <div class="actions"><button class="primary" id="new">New customer</button><button id="share">Share bill</button></div>
+  <p class="note">Your entries stay on this phone. The calculator works offline after the first successful visit while the app is installed.</p>
+</main>
+<script>
+const colors=['#d94d4d','#d5a323','#39966b','#8a69bd','#bd7442','#4787a8'];
+let products=[
+ {name:'Red masala',weight:'250',rate:'200'},
+ {name:'Yellow masala',weight:'500',rate:'200'},
+ {name:'Green masala',weight:'1000',rate:'200'}
+];
+const $=id=>document.getElementById(id);
+const money=n=>'₹'+(Number.isFinite(n)?n:0).toFixed(2);
+function safeNumber(v){const n=Number(v);return Number.isFinite(n)&&n>=0?n:0}
+function itemPrice(p){return safeNumber(p.weight)*safeNumber(p.rate)/1000}
+function render(){
+ $('items').innerHTML='';
+ products.forEach((p,i)=>{
+  const card=document.createElement('article');card.className='item';
+  card.innerHTML=`<div class="item-top"><span class="dot" style="background:${colors[i%colors.length]}"></span><input class="item-name" aria-label="Masala name" value="${escapeAttr(p.name)}" data-field="name" data-i="${i}"><button class="remove" aria-label="Remove item" data-remove="${i}" ${products.length===1?'disabled':''}>×</button></div>
+  <div class="fields"><div><label>WEIGHT (GRAMS)</label><input type="number" min="0" step="1" inputmode="decimal" placeholder="e.g. 250" value="${escapeAttr(p.weight)}" data-field="weight" data-i="${i}"></div><div><label>PRICE PER KG (₹)</label><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 200" value="${escapeAttr(p.rate)}" data-field="rate" data-i="${i}"></div></div>
+  <div class="item-price"><span>Item price</span><strong id="price-${i}">${money(itemPrice(p))}</strong></div>`;
+  $('items').appendChild(card);
+ });
+ update();
+}
+function escapeAttr(s){return String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;')}
+function update(){
+ let total=products.reduce((sum,p)=>sum+itemPrice(p),0);
+ if($('rounding').value==='1') total=Math.round(total);
+ $('total').textContent=money(total);
+ products.forEach((p,i)=>{const el=$('price-'+i);if(el)el.textContent=money(itemPrice(p))});
+ const paidText=$('paid').value;const paid=paidText===''?0:safeNumber(paidText);
+ const diff=paid-total;
+ $('change-label').textContent=diff>=0?'RETURN TO CUSTOMER':'MONEY STILL DUE';
+ $('change').textContent=money(Math.abs(diff));
+ $('change').classList.toggle('due',diff<0);
+ $('error').style.display=paidText!==''&&diff<0?'block':'none';
+ try{localStorage.setItem('masala-counter-state',JSON.stringify({products,paid:$('paid').value,rounding:$('rounding').value}))}catch(e){}
+}
+$('items').addEventListener('input',e=>{
+ const el=e.target;if(!el.dataset.field)return;
+ const i=Number(el.dataset.i);products[i][el.dataset.field]=el.value;
+ if(el.dataset.field==='name')return;
+ update();
+});
+$('items').addEventListener('change',e=>{
+ const el=e.target;if(!el.dataset.field)return;
+ const i=Number(el.dataset.i);products[i][el.dataset.field]=el.value;update();
+});
+$('items').addEventListener('click',e=>{
+ const b=e.target.closest('[data-remove]');if(!b)return;
+ products.splice(Number(b.dataset.remove),1);render();
+});
+$('add').addEventListener('click',()=>{products.push({name:'New masala',weight:'',rate:'200'});render();const inputs=$('items').querySelectorAll('.item-name');inputs[inputs.length-1].focus()});
+$('paid').addEventListener('input',update);$('rounding').addEventListener('change',update);
+$('new').addEventListener('click',()=>{products=[{name:'Red masala',weight:'',rate:'200'}];$('paid').value='';$('rounding').value='0';render()});
+$('share').addEventListener('click',async()=>{
+ const lines=products.map(p=>`${p.name}: ${p.weight||0}g @ ${money(safeNumber(p.rate))}/kg = ${money(itemPrice(p))}`);
+ const total=products.reduce((s,p)=>s+itemPrice(p),0);
+ const paid=safeNumber($('paid').value);const text=`MASALA COUNTER\n${lines.join('\n')}\nTOTAL: ${money(total)}\nPAID: ${money(paid)}\n${paid>=total?'CHANGE':'DUE'}: ${money(Math.abs(paid-total))}`;
+ if(navigator.share){try{await navigator.share({title:'Masala bill',text})}catch(e){}}else if(navigator.clipboard){await navigator.clipboard.writeText(text);alert('Bill copied.')}
+});
+try{const saved=JSON.parse(localStorage.getItem('masala-counter-state')||'null');if(saved){products=saved.products||products;$('paid').value=saved.paid||'';$('rounding').value=saved.rounding||'0'}}catch(e){}
+render();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').then(()=>{$('status').textContent='Offline ready'}).catch(()=>{$('status').textContent='Online mode'}))}
+</script>
+</body>
+</html>
